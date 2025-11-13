@@ -44,8 +44,8 @@ Talisman(app,
          content_security_policy=csp,
          force_https=False)  # Set to True in production with HTTPS
 
-# Store calculation history in session (max 5)
-MAX_HISTORY = 5
+# Store calculation history in session (max 10)
+MAX_HISTORY = 10
 
 # SECURITY: Safe mathematical operators for expression evaluation
 # Only allow basic arithmetic operations - no dangerous functions
@@ -125,7 +125,7 @@ def index():
 def calculate():
     """
     Process calculation request and return result
-    Maintains history of last 5 calculations
+    Maintains history of last 10 calculations
     """
     try:
         data = request.get_json()
@@ -159,13 +159,13 @@ def calculate():
         if not isinstance(history, list):
             history = []
 
-        # Add to history (keep last 5)
+        # Add to history (keep last 10)
         history.append({
             'expression': expression,
             'result': result
         })
 
-        # Keep only last 5 calculations
+        # Keep only last 10 calculations
         if len(history) > MAX_HISTORY:
             history = history[-MAX_HISTORY:]
 
@@ -235,4 +235,4 @@ if __name__ == '__main__':
     if debug_mode:
         app.logger.warning("⚠️  WARNING: Running in DEBUG mode - DO NOT use in production!")
 
-    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+    app.run(debug=debug_mode, host='0.0.0.0', port=5001)
