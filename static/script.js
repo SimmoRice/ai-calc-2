@@ -336,8 +336,21 @@ function fromRadians(value) {
 async function scientificFunction(func) {
     const value = parseFloat(currentValue);
 
+    // SECURITY: Validate input is a number
     if (isNaN(value)) {
         displayError('Invalid input');
+        return;
+    }
+
+    // SECURITY: Validate value is finite (not Infinity or -Infinity)
+    if (!isFinite(value)) {
+        displayError('Value out of range');
+        return;
+    }
+
+    // SECURITY: Prevent extremely large values that could cause issues
+    if (Math.abs(value) > 1e100) {
+        displayError('Value too large');
         return;
     }
 
@@ -444,18 +457,47 @@ function memoryClear() {
 }
 
 function memoryRecall() {
+    // SECURITY: Validate memory value before using it
+    if (!isFinite(memory)) {
+        displayError('Invalid memory value');
+        return;
+    }
     currentValue = String(memory);
     updateDisplay();
     shouldResetDisplay = true;
 }
 
 function memoryAdd() {
-    memory += parseFloat(currentValue);
+    const value = parseFloat(currentValue);
+    // SECURITY: Validate value before adding to memory
+    if (isNaN(value) || !isFinite(value)) {
+        displayError('Invalid value');
+        return;
+    }
+    memory += value;
+    // SECURITY: Check if memory value is still valid after addition
+    if (!isFinite(memory)) {
+        memory = 0;
+        displayError('Memory overflow');
+        return;
+    }
     updateMemoryIndicator();
 }
 
 function memorySubtract() {
-    memory -= parseFloat(currentValue);
+    const value = parseFloat(currentValue);
+    // SECURITY: Validate value before subtracting from memory
+    if (isNaN(value) || !isFinite(value)) {
+        displayError('Invalid value');
+        return;
+    }
+    memory -= value;
+    // SECURITY: Check if memory value is still valid after subtraction
+    if (!isFinite(memory)) {
+        memory = 0;
+        displayError('Memory overflow');
+        return;
+    }
     updateMemoryIndicator();
 }
 

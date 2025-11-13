@@ -162,11 +162,23 @@ def calculate():
         if len(expression) > 200:
             return jsonify({'error': 'Expression too long'}), 400
 
+        # SECURITY: Strip whitespace for validation
+        expression = expression.strip()
+
         # SECURITY: Validate expression (only allow safe characters)
         # This is a first-line defense; safe_eval provides deeper protection
         allowed_chars = set('0123456789+-*/(). ')
         if not all(c in allowed_chars for c in expression):
             return jsonify({'error': 'Invalid characters in expression'}), 400
+
+        # SECURITY: Additional validation - prevent excessive operators or parentheses
+        # This prevents attempts to create deeply nested expressions that could cause performance issues
+        if expression.count('(') > 50 or expression.count(')') > 50:
+            return jsonify({'error': 'Expression too complex'}), 400
+
+        # SECURITY: Check for suspicious patterns (repeated operators)
+        if any(op*3 in expression for op in ['+', '-', '*', '/']):
+            return jsonify({'error': 'Invalid expression pattern'}), 400
 
         # SECURITY: Use safe_eval instead of dangerous eval()
         # This prevents code injection attacks
@@ -298,6 +310,18 @@ def scientific():
             if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in [base, exponent]):
                 return jsonify({'error': 'Invalid power parameters'}), 400
 
+            # SECURITY: Prevent potential DoS via extremely large exponentiations
+            # Limit base and exponent ranges to reasonable values
+            if abs(base) > 1e100 or abs(exponent) > 1000:
+                return jsonify({'error': 'Power parameters out of range'}), 400
+
+            # SECURITY: Additional check for potentially problematic calculations
+            # Prevent 0^0, negative base with fractional exponent
+            if base == 0 and exponent == 0:
+                return jsonify({'error': 'Undefined: 0^0'}), 400
+            if base < 0 and not exponent.is_integer():
+                return jsonify({'error': 'Cannot raise negative number to fractional power'}), 400
+
             # Calculate power
             try:
                 result = math.pow(base, exponent)
@@ -313,6 +337,10 @@ def scientific():
             # Check for valid number
             if not math.isfinite(value):
                 return jsonify({'error': 'Invalid value'}), 400
+
+            # SECURITY: Prevent potential DoS via extremely large values
+            if abs(value) > 1e100:
+                return jsonify({'error': 'Value out of range'}), 400
 
             # Execute the scientific function
             try:
