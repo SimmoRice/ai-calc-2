@@ -15,6 +15,11 @@ let previousValue = null;
 let operation = null;
 let shouldResetDisplay = false;
 
+// Scientific calculator state
+let scientificMode = false;
+let angleMode = 'deg'; // 'deg' or 'rad'
+let memory = 0;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     loadTheme();
@@ -140,6 +145,25 @@ function clearOperatorHighlight() {
 
 async function calculate() {
     if (operation === null || previousValue === null) {
+        return;
+    }
+
+    // Handle power operation separately
+    if (operation === '^') {
+        try {
+            const result = await callScientificAPI('power', {
+                base: parseFloat(previousValue),
+                exponent: parseFloat(currentValue)
+            });
+            currentValue = String(result);
+            updateDisplay();
+        } catch (error) {
+            displayError(error.message || 'Calculation error');
+        }
+        operation = null;
+        previousValue = null;
+        shouldResetDisplay = true;
+        clearOperatorHighlight();
         return;
     }
 
@@ -276,6 +300,173 @@ async function clearHistory() {
 }
 
 /**
+ * Scientific Functions
+ */
+function toggleScientificMode() {
+    scientificMode = !scientificMode;
+    const scientificPanel = document.querySelector('.scientific-panel');
+    const modeBtn = document.getElementById('sciModeBtn');
+
+    if (scientificMode) {
+        scientificPanel.classList.add('visible');
+        modeBtn.textContent = 'Basic';
+    } else {
+        scientificPanel.classList.remove('visible');
+        modeBtn.textContent = 'Scientific';
+    }
+}
+
+function toggleAngleMode() {
+    angleMode = angleMode === 'deg' ? 'rad' : 'deg';
+    const angleModeBtn = document.getElementById('angleModeBtn');
+    angleModeBtn.textContent = angleMode.toUpperCase();
+}
+
+// Convert degrees to radians if needed
+function toRadians(value) {
+    return angleMode === 'deg' ? value * (Math.PI / 180) : value;
+}
+
+// Convert radians to degrees if needed
+function fromRadians(value) {
+    return angleMode === 'deg' ? value * (180 / Math.PI) : value;
+}
+
+// Scientific function handlers
+async function scientificFunction(func) {
+    const value = parseFloat(currentValue);
+
+    if (isNaN(value)) {
+        displayError('Invalid input');
+        return;
+    }
+
+    try {
+        let result;
+        switch(func) {
+            case 'sin':
+                result = await callScientificAPI('sin', toRadians(value));
+                break;
+            case 'cos':
+                result = await callScientificAPI('cos', toRadians(value));
+                break;
+            case 'tan':
+                result = await callScientificAPI('tan', toRadians(value));
+                break;
+            case 'asin':
+                result = fromRadians(await callScientificAPI('asin', value));
+                break;
+            case 'acos':
+                result = fromRadians(await callScientificAPI('acos', value));
+                break;
+            case 'atan':
+                result = fromRadians(await callScientificAPI('atan', value));
+                break;
+            case 'log':
+                result = await callScientificAPI('log', value);
+                break;
+            case 'ln':
+                result = await callScientificAPI('ln', value);
+                break;
+            case 'exp':
+                result = await callScientificAPI('exp', value);
+                break;
+            case 'sqrt':
+                result = await callScientificAPI('sqrt', value);
+                break;
+            case 'square':
+                result = await callScientificAPI('square', value);
+                break;
+            case 'reciprocal':
+                result = await callScientificAPI('reciprocal', value);
+                break;
+            default:
+                displayError('Unknown function');
+                return;
+        }
+
+        currentValue = String(result);
+        updateDisplay();
+        shouldResetDisplay = true;
+    } catch (error) {
+        displayError(error.message || 'Calculation error');
+    }
+}
+
+// Call backend for scientific calculations
+async function callScientificAPI(func, value) {
+    try {
+        const response = await fetch('/scientific', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ function: func, value: value })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            return data.result;
+        } else {
+            throw new Error(data.error || 'Calculation failed');
+        }
+    } catch (error) {
+        throw new Error(error.message || 'Network error');
+    }
+}
+
+// Insert constants
+function insertConstant(constant) {
+    if (constant === 'pi') {
+        currentValue = String(Math.PI);
+    } else if (constant === 'e') {
+        currentValue = String(Math.E);
+    }
+    updateDisplay();
+    shouldResetDisplay = true;
+}
+
+// Power function - sets up for x^y operation
+function setPowerOperation() {
+    if (previousValue !== null && !shouldResetDisplay) {
+        calculate();
+    }
+    operation = '^';
+    previousValue = currentValue;
+    shouldResetDisplay = true;
+}
+
+// Memory functions
+function memoryClear() {
+    memory = 0;
+    updateMemoryIndicator();
+}
+
+function memoryRecall() {
+    currentValue = String(memory);
+    updateDisplay();
+    shouldResetDisplay = true;
+}
+
+function memoryAdd() {
+    memory += parseFloat(currentValue);
+    updateMemoryIndicator();
+}
+
+function memorySubtract() {
+    memory -= parseFloat(currentValue);
+    updateMemoryIndicator();
+}
+
+function updateMemoryIndicator() {
+    const indicator = document.getElementById('memoryIndicator');
+    if (indicator) {
+        indicator.style.display = memory !== 0 ? 'block' : 'none';
+    }
+}
+
+/**
  * Keyboard Support
  */
 document.addEventListener('keydown', (event) => {
@@ -300,5 +491,13 @@ document.addEventListener('keydown', (event) => {
             currentValue = '0';
         }
         updateDisplay();
+    } else if (event.shiftKey && key === 'S') {
+        toggleScientificMode();
+    } else if (event.shiftKey && key === 'D') {
+        toggleAngleMode();
+    } else if (key === 'p') {
+        insertConstant('pi');
+    } else if (key === 'e' && !event.ctrlKey && !event.metaKey) {
+        insertConstant('e');
     }
 });

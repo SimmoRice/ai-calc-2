@@ -1,6 +1,6 @@
 """
 macOS-themed Web Calculator with Flask
-Supports basic arithmetic operations, light/dark themes, and calculation history
+Supports basic arithmetic operations, scientific functions, light/dark themes, and calculation history
 
 SECURITY FEATURES:
 - Safe expression evaluation using AST parsing (no eval())
@@ -20,6 +20,7 @@ import secrets
 import re
 import ast
 import operator
+import math
 from collections import deque
 
 app = Flask(__name__)
@@ -249,6 +250,128 @@ def clear_history():
     session['history'] = []
     session.modified = True
     return jsonify({'success': True})
+
+
+@app.route('/scientific', methods=['POST'])
+@limiter.limit("30 per minute")  # SECURITY: Rate limit scientific endpoint
+def scientific():
+    """
+    Process scientific function requests
+    Supports trigonometric, logarithmic, exponential, and power functions
+    """
+    try:
+        data = request.get_json()
+
+        # SECURITY: Validate JSON data exists
+        if not data:
+            return jsonify({'error': 'Invalid request'}), 400
+
+        func = data.get('function', '')
+        value = data.get('value')
+
+        # SECURITY: Validate function name
+        if not isinstance(func, str):
+            return jsonify({'error': 'Invalid function type'}), 400
+
+        # SECURITY: Whitelist of allowed functions
+        allowed_functions = {
+            'sin', 'cos', 'tan', 'asin', 'acos', 'atan',
+            'log', 'ln', 'exp', 'sqrt', 'square', 'reciprocal', 'power'
+        }
+
+        if func not in allowed_functions:
+            return jsonify({'error': 'Unknown function'}), 400
+
+        # Handle power function (takes two values)
+        if func == 'power':
+            if not isinstance(value, dict):
+                return jsonify({'error': 'Invalid power parameters'}), 400
+
+            base = value.get('base')
+            exponent = value.get('exponent')
+
+            # SECURITY: Validate both parameters are numbers
+            if not isinstance(base, (int, float)) or not isinstance(exponent, (int, float)):
+                return jsonify({'error': 'Invalid power parameters'}), 400
+
+            # Check for valid numbers
+            if not all(isinstance(x, (int, float)) and math.isfinite(x) for x in [base, exponent]):
+                return jsonify({'error': 'Invalid power parameters'}), 400
+
+            # Calculate power
+            try:
+                result = math.pow(base, exponent)
+            except (ValueError, OverflowError) as e:
+                return jsonify({'error': 'Power calculation error'}), 400
+
+        else:
+            # Single-value functions
+            # SECURITY: Validate value is a number
+            if not isinstance(value, (int, float)):
+                return jsonify({'error': 'Invalid value type'}), 400
+
+            # Check for valid number
+            if not math.isfinite(value):
+                return jsonify({'error': 'Invalid value'}), 400
+
+            # Execute the scientific function
+            try:
+                if func == 'sin':
+                    result = math.sin(value)
+                elif func == 'cos':
+                    result = math.cos(value)
+                elif func == 'tan':
+                    result = math.tan(value)
+                elif func == 'asin':
+                    if value < -1 or value > 1:
+                        return jsonify({'error': 'Domain error: asin requires value between -1 and 1'}), 400
+                    result = math.asin(value)
+                elif func == 'acos':
+                    if value < -1 or value > 1:
+                        return jsonify({'error': 'Domain error: acos requires value between -1 and 1'}), 400
+                    result = math.acos(value)
+                elif func == 'atan':
+                    result = math.atan(value)
+                elif func == 'log':
+                    if value <= 0:
+                        return jsonify({'error': 'Domain error: log requires positive value'}), 400
+                    result = math.log10(value)
+                elif func == 'ln':
+                    if value <= 0:
+                        return jsonify({'error': 'Domain error: ln requires positive value'}), 400
+                    result = math.log(value)
+                elif func == 'exp':
+                    result = math.exp(value)
+                elif func == 'sqrt':
+                    if value < 0:
+                        return jsonify({'error': 'Domain error: sqrt requires non-negative value'}), 400
+                    result = math.sqrt(value)
+                elif func == 'square':
+                    result = value * value
+                elif func == 'reciprocal':
+                    if value == 0:
+                        return jsonify({'error': 'Division by zero'}), 400
+                    result = 1 / value
+                else:
+                    return jsonify({'error': 'Unknown function'}), 400
+
+            except (ValueError, OverflowError) as e:
+                return jsonify({'error': 'Calculation error'}), 400
+
+        # SECURITY: Validate result is a finite number
+        if not isinstance(result, (int, float)):
+            return jsonify({'error': 'Invalid result type'}), 400
+
+        # Check for NaN or Infinity
+        if not math.isfinite(result):
+            return jsonify({'error': 'Result is not finite'}), 400
+
+        return jsonify({'result': result})
+
+    except Exception as e:
+        # SECURITY: Generic error message - don't leak internal details
+        app.logger.error(f"Scientific calculation error: {str(e)}")
+        return jsonify({'error': 'Calculation failed'}), 400
 
 
 # SECURITY: Additional headers for defense in depth

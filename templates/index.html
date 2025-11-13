@@ -19,7 +19,51 @@
         <div class="calculator">
             <!-- Display -->
             <div class="display">
+                <div class="display-indicators">
+                    <span id="memoryIndicator" class="memory-indicator">M</span>
+                    <span id="angleModeBtn" class="angle-indicator" onclick="toggleAngleMode()">DEG</span>
+                </div>
                 <div class="display-text" id="display">0</div>
+            </div>
+
+            <!-- Scientific Panel (Hidden by default) -->
+            <div class="scientific-panel">
+                <div class="scientific-buttons">
+                    <!-- Row 1: Trig functions -->
+                    <button class="btn btn-scientific" onclick="scientificFunction('sin')">sin</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('cos')">cos</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('tan')">tan</button>
+                    <button class="btn btn-scientific" onclick="insertConstant('pi')">π</button>
+
+                    <!-- Row 2: Inverse trig -->
+                    <button class="btn btn-scientific" onclick="scientificFunction('asin')">sin⁻¹</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('acos')">cos⁻¹</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('atan')">tan⁻¹</button>
+                    <button class="btn btn-scientific" onclick="insertConstant('e')">e</button>
+
+                    <!-- Row 3: Exponential and logarithmic -->
+                    <button class="btn btn-scientific" onclick="scientificFunction('log')">log</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('ln')">ln</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('exp')">eˣ</button>
+                    <button class="btn btn-scientific" onclick="setPowerOperation()">xʸ</button>
+
+                    <!-- Row 4: Other functions -->
+                    <button class="btn btn-scientific" onclick="scientificFunction('sqrt')">√</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('square')">x²</button>
+                    <button class="btn btn-scientific" onclick="scientificFunction('reciprocal')">1/x</button>
+                    <button class="btn btn-scientific" onclick="percentage()">%</button>
+
+                    <!-- Row 5: Memory functions -->
+                    <button class="btn btn-scientific" onclick="memoryClear()">MC</button>
+                    <button class="btn btn-scientific" onclick="memoryRecall()">MR</button>
+                    <button class="btn btn-scientific" onclick="memoryAdd()">M+</button>
+                    <button class="btn btn-scientific" onclick="memorySubtract()">M−</button>
+                </div>
+            </div>
+
+            <!-- Mode Toggle Button -->
+            <div class="mode-toggle">
+                <button id="sciModeBtn" class="btn btn-mode" onclick="toggleScientificMode()">Scientific</button>
             </div>
 
             <!-- Buttons -->
