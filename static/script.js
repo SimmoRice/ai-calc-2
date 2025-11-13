@@ -1,6 +1,12 @@
 /**
  * macOS Calculator JavaScript
  * Handles calculator logic, theme switching, and history management
+ *
+ * SECURITY NOTES:
+ * - Uses textContent instead of innerHTML to prevent XSS
+ * - DOM manipulation prevents injection attacks
+ * - Event listeners instead of inline onclick handlers
+ * - Input validation on client side (server validates too)
  */
 
 // Calculator state
@@ -242,6 +248,11 @@ function formatNumber(num) {
 }
 
 function loadFromHistory(result) {
+    // SECURITY: Validate result is a number before using it
+    if (typeof result !== 'number' || isNaN(result) || !isFinite(result)) {
+        console.error('Invalid result from history:', result);
+        return;
+    }
     currentValue = String(result);
     updateDisplay();
     shouldResetDisplay = true;

@@ -1,6 +1,16 @@
 """
 macOS-themed Web Calculator with Flask
 Supports basic arithmetic operations, light/dark themes, and calculation history
+
+SECURITY FEATURES:
+- Safe expression evaluation using AST parsing (no eval())
+- Input validation and sanitization
+- Rate limiting to prevent abuse
+- XSS prevention via DOM manipulation
+- CSRF protection via SameSite cookies
+- Secure session management with HTTPOnly cookies
+- Security headers (CSP, X-Frame-Options, etc.)
+- No sensitive data exposure in errors
 """
 from flask import Flask, render_template, request, jsonify, session
 from flask_limiter import Limiter
@@ -126,6 +136,9 @@ def calculate():
     """
     Process calculation request and return result
     Maintains history of last 10 calculations
+
+    SECURITY NOTE: For production with multiple frontend origins, consider
+    implementing CSRF token validation in addition to SameSite cookies.
     """
     try:
         data = request.get_json()
@@ -135,6 +148,14 @@ def calculate():
             return jsonify({'error': 'Invalid request'}), 400
 
         expression = data.get('expression', '')
+
+        # SECURITY: Validate expression type to prevent type confusion
+        if not isinstance(expression, str):
+            return jsonify({'error': 'Invalid expression type'}), 400
+
+        # SECURITY: Validate expression is not empty
+        if not expression or not expression.strip():
+            return jsonify({'error': 'Empty expression'}), 400
 
         # SECURITY: Validate expression length to prevent abuse
         if len(expression) > 200:
@@ -150,6 +171,16 @@ def calculate():
         # This prevents code injection attacks
         result = safe_eval(expression)
 
+        # SECURITY: Validate result is a finite number
+        if not isinstance(result, (int, float)):
+            return jsonify({'error': 'Invalid result type'}), 400
+
+        # Check for NaN or Infinity
+        if result != result:  # NaN check
+            return jsonify({'error': 'Result is not a number'}), 400
+        if result == float('inf') or result == float('-inf'):
+            return jsonify({'error': 'Result is infinite'}), 400
+
         # Initialize history if not exists
         if 'history' not in session:
             session['history'] = []
@@ -159,15 +190,24 @@ def calculate():
         if not isinstance(history, list):
             history = []
 
+        # SECURITY: Sanitize history entries before adding
+        # Truncate extremely long expressions to prevent session bloat
+        sanitized_expression = expression[:100] if len(expression) > 100 else expression
+
         # Add to history (keep last 10)
         history.append({
-            'expression': expression,
-            'result': result
+            'expression': sanitized_expression,
+            'result': float(result)  # Ensure consistent numeric type
         })
 
         # Keep only last 10 calculations
         if len(history) > MAX_HISTORY:
             history = history[-MAX_HISTORY:]
+
+        # SECURITY: Validate history size to prevent session exhaustion
+        # Limit total history entries regardless of MAX_HISTORY constant
+        if len(history) > 100:  # Hard limit as failsafe
+            history = history[-100:]
 
         session['history'] = history
         session.modified = True
@@ -230,9 +270,24 @@ if __name__ == '__main__':
     # SECURITY: Disable debug mode in production!
     # Debug mode exposes sensitive information and the debugger console
     import os
-    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+
+    # SECURITY: Validate environment variable to prevent injection
+    debug_env = os.environ.get('FLASK_DEBUG', 'False').lower()
+    debug_mode = debug_env in ('true', '1', 'yes')
 
     if debug_mode:
         app.logger.warning("⚠️  WARNING: Running in DEBUG mode - DO NOT use in production!")
+
+    # SECURITY: Validate production environment
+    is_production = os.environ.get('FLASK_ENV', 'development').lower() == 'production'
+
+    if is_production:
+        # SECURITY: Force HTTPS settings in production
+        if not app.config['SESSION_COOKIE_SECURE']:
+            app.logger.warning("⚠️  WARNING: SESSION_COOKIE_SECURE should be True in production!")
+        # Ensure debug is off in production
+        if debug_mode:
+            app.logger.error("❌ ERROR: Debug mode MUST be disabled in production!")
+            exit(1)
 
     app.run(debug=debug_mode, host='0.0.0.0', port=5001)
