@@ -334,13 +334,16 @@ async function clearHistory() {
 function toggleScientificMode() {
     scientificMode = !scientificMode;
     const scientificPanel = document.querySelector('.scientific-panel');
+    const calculator = document.querySelector('.calculator');
     const modeBtn = document.getElementById('sciModeBtn');
 
     if (scientificMode) {
         scientificPanel.classList.add('visible');
+        calculator.classList.add('scientific-active');
         modeBtn.textContent = 'Basic';
     } else {
         scientificPanel.classList.remove('visible');
+        calculator.classList.remove('scientific-active');
         modeBtn.textContent = 'Scientific';
     }
 }
