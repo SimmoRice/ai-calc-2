@@ -494,6 +494,69 @@ class TestHistoryManagement:
         assert len(data['history']) == 1
         assert data['history'][0]['expression'] == '7+7'
 
+    def test_history_exactly_10_items(self, client):
+        """Test that history maintains exactly 10 items when limit is reached"""
+        # Add exactly 10 calculations
+        for i in range(10):
+            response = client.post('/calculate',
+                                  data=json.dumps({'expression': f'{i}+{i}'}),
+                                  content_type='application/json')
+            assert response.status_code == 200
+
+        # Verify exactly 10 items
+        response = client.get('/history')
+        data = json.loads(response.data)
+        assert len(data['history']) == 10
+        assert data['history'][0]['expression'] == '0+0'
+        assert data['history'][9]['expression'] == '9+9'
+
+    def test_history_11th_item_removes_oldest(self, client):
+        """Test that adding 11th item removes the oldest item"""
+        # Add 10 calculations
+        for i in range(10):
+            client.post('/calculate',
+                       data=json.dumps({'expression': f'{i}+1'}),
+                       content_type='application/json')
+
+        # Add 11th calculation
+        response = client.post('/calculate',
+                              data=json.dumps({'expression': '100+100'}),
+                              content_type='application/json')
+        assert response.status_code == 200
+        data = json.loads(response.data)
+
+        # Verify still 10 items, oldest removed
+        assert len(data['history']) == 10
+        # First item should be '1+1' (0+1 was removed)
+        assert data['history'][0]['expression'] == '1+1'
+        # Last item should be the new one
+        assert data['history'][9]['expression'] == '100+100'
+        assert data['history'][9]['result'] == 200
+
+    def test_history_rotation_with_15_items(self, client):
+        """Test that history properly rotates when adding 15 items"""
+        # Add 15 calculations
+        for i in range(15):
+            response = client.post('/calculate',
+                                  data=json.dumps({'expression': f'{i}*2'}),
+                                  content_type='application/json')
+            assert response.status_code == 200
+
+        # Verify only last 10 are kept
+        response = client.get('/history')
+        data = json.loads(response.data)
+        assert len(data['history']) == 10
+
+        # Should have items 5 through 14
+        for i, item in enumerate(data['history']):
+            expected_expr = f'{i+5}*2'
+            assert item['expression'] == expected_expr
+            assert item['result'] == (i+5) * 2
+
+    def test_history_max_constant_value(self, client):
+        """Test that MAX_HISTORY constant is actually 10"""
+        assert MAX_HISTORY == 10, "MAX_HISTORY should be 10 per requirements"
+
 
 # ============================================================================
 # INTEGRATION TESTS
