@@ -197,17 +197,32 @@ function updateHistoryDisplay(history) {
         return;
     }
 
-    // Display history in reverse order (most recent first)
-    const historyHTML = [...history].reverse().map(item => {
-        return `
-            <div class="history-item" onclick="loadFromHistory('${item.result}')">
-                <div class="history-expression">${formatExpression(item.expression)}</div>
-                <div class="history-result">${formatNumber(item.result)}</div>
-            </div>
-        `;
-    }).join('');
+    // SECURITY: Clear existing content to prevent XSS
+    historyList.innerHTML = '';
 
-    historyList.innerHTML = historyHTML;
+    // Display history in reverse order (most recent first)
+    // SECURITY: Use DOM manipulation instead of innerHTML to prevent XSS
+    [...history].reverse().forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+
+        // SECURITY: Set text content (not innerHTML) to prevent XSS injection
+        const expressionDiv = document.createElement('div');
+        expressionDiv.className = 'history-expression';
+        expressionDiv.textContent = formatExpression(item.expression);
+
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'history-result';
+        resultDiv.textContent = formatNumber(item.result);
+
+        historyItem.appendChild(expressionDiv);
+        historyItem.appendChild(resultDiv);
+
+        // SECURITY: Use event listener instead of inline onclick
+        historyItem.addEventListener('click', () => loadFromHistory(item.result));
+
+        historyList.appendChild(historyItem);
+    });
 }
 
 function formatExpression(expr) {
