@@ -29,34 +29,61 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Theme Management - 3 Custom Themes
  */
+
+// SECURITY: Whitelist of allowed theme values to prevent XSS via localStorage
+const ALLOWED_THEMES = ['macos', 'dark', 'blue'];
+
 function changeTheme() {
     const themeSelect = document.getElementById('themeSelect');
     const selectedTheme = themeSelect.value;
+
+    // SECURITY: Validate theme is in allowed list before applying
+    if (!ALLOWED_THEMES.includes(selectedTheme)) {
+        console.error('Invalid theme selected:', selectedTheme);
+        return;
+    }
+
     applyTheme(selectedTheme);
+
+    // SECURITY: Only store validated theme values in localStorage
     localStorage.setItem('calculator-theme', selectedTheme);
 }
 
 function applyTheme(themeName) {
     const body = document.body;
 
+    // SECURITY: Validate theme name before applying to DOM
+    if (!ALLOWED_THEMES.includes(themeName)) {
+        console.error('Invalid theme name:', themeName);
+        themeName = 'macos'; // Fallback to default
+    }
+
     // Remove existing theme if any
     body.removeAttribute('data-theme');
 
     // Apply new theme (macos is default, no attribute needed)
     if (themeName !== 'macos') {
+        // SECURITY: Only set data-theme with validated values
         body.setAttribute('data-theme', themeName);
     }
 }
 
 function loadTheme() {
+    // SECURITY: Read from localStorage and validate against whitelist
     const savedTheme = localStorage.getItem('calculator-theme') || 'macos';
+
+    // SECURITY: Sanitize and validate theme value to prevent XSS
+    // Even though localStorage is same-origin, validate to prevent issues
+    // if malicious script manages to write invalid values
+    const validatedTheme = ALLOWED_THEMES.includes(savedTheme) ? savedTheme : 'macos';
+
     const themeSelect = document.getElementById('themeSelect');
 
-    // Set the select value to the saved theme
-    themeSelect.value = savedTheme;
+    // Set the select value to the validated theme
+    themeSelect.value = validatedTheme;
 
-    // Apply the theme
-    applyTheme(savedTheme);
+    // Apply the validated theme
+    applyTheme(validatedTheme);
 }
 
 /**

@@ -62,7 +62,34 @@ This document outlines the security measures implemented in the Scientific Calcu
 - **Error Messages**: Generic error messages that don't reflect user input
   - Prevents reflected XSS attacks
 
-### 3. Rate Limiting
+### 3. LocalStorage Security (Theme Persistence)
+
+**SECURITY HARDENING**: Theme selection uses localStorage with strict validation
+
+- **Whitelist Validation**: Only allows predefined theme values (`macos`, `dark`, `blue`)
+  - Prevents XSS if malicious script writes to localStorage
+  - Theme values validated before reading from localStorage
+  - Invalid values fallback to safe default (`macos`)
+
+- **Defense in Depth**: Multiple validation layers
+  - Validation when reading from localStorage (`loadTheme()`)
+  - Validation when applying theme to DOM (`applyTheme()`)
+  - Validation when user selects theme (`changeTheme()`)
+
+- **Safe DOM Manipulation**: Uses `setAttribute()` only with validated values
+  - Prevents injection of malicious attributes
+  - Theme attribute values are strictly controlled
+
+**Example Attack Prevention**:
+```javascript
+// Attacker tries to inject malicious theme via localStorage
+localStorage.setItem('calculator-theme', '<img src=x onerror=alert(1)>');
+
+// Our validation catches this and falls back to safe default
+// Result: theme = 'macos' (safe default)
+```
+
+### 4. Rate Limiting
 
 Protected endpoints (using Flask-Limiter):
 - `/calculate`: 30 requests per minute
@@ -76,7 +103,7 @@ Prevents:
 - Resource exhaustion
 - Denial of Service (DoS)
 
-### 4. Security Headers
+### 5. Security Headers
 
 Implemented via Flask-Talisman and custom middleware:
 
@@ -98,7 +125,7 @@ Implemented via Flask-Talisman and custom middleware:
 - **Referrer-Policy**: `strict-origin-when-cross-origin`
   - Controls referrer information leakage
 
-### 5. Session Security
+### 6. Session Security
 
 - **HTTPOnly Cookies**: Prevents JavaScript access to session cookies
   - Protects against XSS-based session hijacking
@@ -115,7 +142,7 @@ Implemented via Flask-Talisman and custom middleware:
 - **Random Secret Key**: Generated using `secrets.token_hex(16)`
   - Cryptographically secure session signing
 
-### 6. Error Handling
+### 7. Error Handling
 
 - **Generic Error Messages**: Don't expose internal details
   - Users see: "Calculation failed"
@@ -128,7 +155,7 @@ Implemented via Flask-Talisman and custom middleware:
   - "Division by zero"
   - "Domain error: sqrt requires non-negative value"
 
-### 7. Function Whitelisting
+### 8. Function Whitelisting
 
 Scientific functions use explicit whitelist:
 ```python
@@ -194,7 +221,8 @@ When deploying to production, ensure:
 
 3. **Client-side Storage**: Theme preference in localStorage
    - Not encrypted (but not sensitive data)
-   - Could add encryption if needed
+   - **MITIGATED**: Added strict whitelist validation to prevent XSS
+   - Theme values validated on read, write, and apply operations
 
 4. **Memory Storage**: Rate limiting uses in-memory storage
    - Resets on server restart
@@ -233,7 +261,13 @@ If you discover a security vulnerability:
 
 ## Version History
 
-- **v1.0** (Current): Initial security implementation
+- **v1.1** (Current): Theme Feature Security Hardening
+  - Added localStorage whitelist validation for themes
+  - Defense-in-depth validation at multiple layers
+  - Enhanced XSS prevention for theme switching
+  - Updated security documentation
+
+- **v1.0**: Initial security implementation
   - Safe expression evaluation
   - Rate limiting
   - Security headers
