@@ -1,7 +1,9 @@
-/* macOS Calculator Theme - Light and Dark Mode */
+/* macOS Calculator Theme - 3 Custom Color Themes */
 
-:root {
-    /* Light Mode Colors */
+/* Theme 1: macOS Calculator (Default - Light) */
+:root,
+[data-theme="macos"] {
+    /* macOS Light Mode Colors */
     --bg-primary: #f5f5f7;
     --bg-calculator: #e5e5e5;
     --bg-display: #1c1c1e;
@@ -23,27 +25,50 @@
     --history-item-hover: #f5f5f7;
 }
 
+/* Theme 2: Dark Mode Professional */
 [data-theme="dark"] {
-    /* Dark Mode Colors */
-    --bg-primary: #000000;
-    --bg-calculator: #1c1c1e;
-    --bg-display: #1c1c1e;
-    --text-display: #ffffff;
-    --btn-number: #333333;
+    --bg-primary: #1E1E1E;
+    --bg-calculator: #2D2D2D;
+    --bg-display: #1E1E1E;
+    --text-display: #FFFFFF;
+    --btn-number: #3D3D3D;
     --btn-number-hover: #4a4a4a;
-    --btn-number-text: #ffffff;
+    --btn-number-text: #FFFFFF;
     --btn-function: #505050;
     --btn-function-hover: #636363;
-    --btn-function-text: #ffffff;
-    --btn-operator: #ff9f0a;
+    --btn-function-text: #FFFFFF;
+    --btn-operator: #FF9500;
     --btn-operator-hover: #e88f00;
-    --btn-operator-text: #ffffff;
+    --btn-operator-text: #FFFFFF;
     --shadow: rgba(0, 0, 0, 0.4);
     --theme-btn-bg: #2c2c2e;
     --theme-btn-text: #ffffff;
-    --history-bg: #1c1c1e;
+    --history-bg: #2D2D2D;
     --history-border: #3a3a3c;
-    --history-item-hover: #2c2c2e;
+    --history-item-hover: #3D3D3D;
+}
+
+/* Theme 3: Modern Blue */
+[data-theme="blue"] {
+    --bg-primary: #F0F4F8;
+    --bg-calculator: #E2E8F0;
+    --bg-display: #FFFFFF;
+    --text-display: #1A202C;
+    --btn-number: #4299E1;
+    --btn-number-hover: #3182CE;
+    --btn-number-text: #FFFFFF;
+    --btn-function: #E2E8F0;
+    --btn-function-hover: #CBD5E0;
+    --btn-function-text: #2D3748;
+    --btn-operator: #3182CE;
+    --btn-operator-hover: #2C5282;
+    --btn-operator-text: #FFFFFF;
+    --shadow: rgba(66, 153, 225, 0.2);
+    --theme-btn-bg: #FFFFFF;
+    --theme-btn-text: #2D3748;
+    --history-bg: #FFFFFF;
+    --history-border: #CBD5E0;
+    --history-item-hover: #E2E8F0;
 }
 
 * {
@@ -77,23 +102,42 @@ body {
     z-index: 100;
 }
 
-#themeBtn {
+.theme-selector {
     background: var(--theme-btn-bg);
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-    cursor: pointer;
+    border: 1px solid var(--history-border);
+    border-radius: 12px;
+    padding: 8px 12px;
     box-shadow: 0 2px 10px var(--shadow);
     transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-#themeBtn:hover {
-    transform: scale(1.1);
+.theme-selector label {
+    color: var(--theme-btn-text);
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+#themeSelect {
+    background: var(--bg-calculator);
+    color: var(--btn-number-text);
+    border: 1px solid var(--history-border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+}
+
+#themeSelect:hover {
+    background: var(--btn-function);
+}
+
+#themeSelect:focus {
+    border-color: var(--btn-operator);
 }
 
 .calculator {

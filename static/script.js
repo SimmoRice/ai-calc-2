@@ -27,34 +27,36 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Theme Management
+ * Theme Management - 3 Custom Themes
  */
-function toggleTheme() {
-    const body = document.body;
-    const themeBtn = document.getElementById('themeBtn');
-    const currentTheme = body.getAttribute('data-theme');
+function changeTheme() {
+    const themeSelect = document.getElementById('themeSelect');
+    const selectedTheme = themeSelect.value;
+    applyTheme(selectedTheme);
+    localStorage.setItem('calculator-theme', selectedTheme);
+}
 
-    if (currentTheme === 'dark') {
-        body.removeAttribute('data-theme');
-        themeBtn.innerHTML = '<span class="theme-icon">☀️</span>';
-        localStorage.setItem('theme', 'light');
-    } else {
-        body.setAttribute('data-theme', 'dark');
-        themeBtn.innerHTML = '<span class="theme-icon">🌙</span>';
-        localStorage.setItem('theme', 'dark');
+function applyTheme(themeName) {
+    const body = document.body;
+
+    // Remove existing theme if any
+    body.removeAttribute('data-theme');
+
+    // Apply new theme (macos is default, no attribute needed)
+    if (themeName !== 'macos') {
+        body.setAttribute('data-theme', themeName);
     }
 }
 
 function loadTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    const themeBtn = document.getElementById('themeBtn');
+    const savedTheme = localStorage.getItem('calculator-theme') || 'macos';
+    const themeSelect = document.getElementById('themeSelect');
 
-    if (savedTheme === 'dark') {
-        document.body.setAttribute('data-theme', 'dark');
-        themeBtn.innerHTML = '<span class="theme-icon">🌙</span>';
-    } else {
-        themeBtn.innerHTML = '<span class="theme-icon">☀️</span>';
-    }
+    // Set the select value to the saved theme
+    themeSelect.value = savedTheme;
+
+    // Apply the theme
+    applyTheme(savedTheme);
 }
 
 /**
