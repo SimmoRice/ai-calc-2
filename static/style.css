@@ -145,13 +145,14 @@ body {
     border-radius: 20px;
     padding: 20px;
     box-shadow: 0 8px 30px var(--shadow);
-    width: 320px;
+    min-width: 320px;
+    max-width: fit-content;
     transition: all 0.3s ease;
 }
 
 /* When scientific mode is enabled, expand the calculator width */
 .calculator.scientific-active {
-    width: 600px;
+    max-width: 100%;
 }
 
 .display {
@@ -164,6 +165,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    width: 100%;
 }
 
 .display-indicators {
@@ -212,6 +214,8 @@ body {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+    width: 280px;
+    flex-shrink: 0;
 }
 
 .btn {
@@ -280,6 +284,7 @@ body {
 /* Calculator Layout Container - Side by Side */
 .calculator-layout {
     display: flex;
+    flex-direction: row;
     gap: 15px;
     transition: all 0.4s ease;
 }
@@ -307,6 +312,7 @@ body {
     gap: 8px;
     background: var(--bg-calculator);
     border-radius: 12px;
+    width: 240px;
 }
 
 .btn-scientific {
